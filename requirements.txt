@@ -4,5 +4,3 @@ python-multipart
 moviepy
 pydub
 openai
-requests
-jinja2

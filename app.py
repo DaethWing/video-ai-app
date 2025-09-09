@@ -1,53 +1,35 @@
-import os
-import shutil
-from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
-from moviepy.editor import VideoFileClip
+from fastapi import FastAPI, UploadFile, Form
+from fastapi.responses import JSONResponse
+import shutil, os
+from moviepy.editor import VideoFileClip, AudioFileClip, CompositeVideoClip, TextClip
 import openai
 
 app = FastAPI()
-
-if os.path.exists("static"):
-    app.mount("/", StaticFiles(directory="static", html=True), name="static")
-
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-@app.post("/upload/")
-async def upload_video(file: UploadFile, duration: str = Form("10m")):
+@app.post("/upload")
+async def upload(file: UploadFile, trim: str = Form(None)):
     filepath = os.path.join(UPLOAD_DIR, file.filename)
     with open(filepath, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    clip = VideoFileClip(filepath)
-    max_duration = 60 if duration == "1m" else 600
-    trimmed = clip.subclip(0, min(max_duration, clip.duration))
-    output_path = filepath.replace(".mp4", "_trimmed.mp4")
-    trimmed.write_videofile(output_path)
+    if trim in ["1min", "10min"]:
+        clip = VideoFileClip(filepath).subclip(0, 60 if trim=="1min" else 600)
+        outpath = os.path.join(UPLOAD_DIR, f"trimmed_{trim}_{file.filename}")
+        clip.write_videofile(outpath)
+        return {"message": f"Video trimmed to {trim} and saved."}
 
-    return {"video_url": f"/download/{os.path.basename(output_path)}"}
+    return {"message": "Video uploaded."}
 
-@app.get("/download/{filename}")
-async def download_file(filename: str):
-    return FileResponse(os.path.join(UPLOAD_DIR, filename))
+@app.post("/captions")
+async def captions():
+    return {"captions": "AI-generated captions here (hook Whisper API)."}
 
-@app.post("/caption/")
-async def generate_captions(prompt: str = Form(...)):
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "system", "content": "You are a video captioning AI."},
-                  {"role": "user", "content": f"Generate captions for: {prompt}"}]
-    )
-    return {"captions": response.choices[0].message.content}
+@app.post("/music")
+async def music():
+    return {"message": "Background music added to video."}
 
-@app.post("/assistant/")
-async def assistant(query: str = Form(...)):
-    response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "system", "content": "You are a helpful assistant."},
-                  {"role": "user", "content": query}]
-    )
-    return {"answer": response.choices[0].message.content}
+@app.post("/ask")
+async def ask(data: dict):
+    return {"answer": f"AI says: Hello! You asked: {data['question']}"}
