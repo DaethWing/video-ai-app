@@ -9,15 +9,21 @@ RUN npm run build
 FROM python:3.11-slim
 WORKDIR /app
 
-# Install backend dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# System dependencies for moviepy + ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Copy frontend build into backend
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt moviepy[optional]
+
+# Copy frontend build
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Copy backend code
 COPY . .
 
+# Health check endpoint port
 EXPOSE 10000
+
+# Run FastAPI app with Uvicorn
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "10000"]

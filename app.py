@@ -33,3 +33,12 @@ async def music():
 @app.post("/ask")
 async def ask(data: dict):
     return {"answer": f"AI says: Hello! You asked: {data['question']}"}
+
+from fastapi import FastAPI
+import os
+
+app = FastAPI()
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "message": "backend is running!"}

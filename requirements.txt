@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 python-multipart
-moviepy
 pydub
+moviepy
 openai
+requests
