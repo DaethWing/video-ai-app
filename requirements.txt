@@ -4,7 +4,6 @@ python-multipart
 pydub
 openai
 requests
-numpy<2.0
 imageio
 imageio-ffmpeg
 decorator
