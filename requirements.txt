@@ -2,6 +2,10 @@ fastapi
 uvicorn
 python-multipart
 pydub
-moviepy
 openai
 requests
+numpy<2.0
+imageio
+imageio-ffmpeg
+decorator
+proglog
